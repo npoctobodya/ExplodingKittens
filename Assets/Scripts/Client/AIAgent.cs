@@ -5,9 +5,7 @@ using Unity.MLAgents.Actuators;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System;
-using Random = UnityEngine.Random;
 
 public class AIAgent : Agent
 {

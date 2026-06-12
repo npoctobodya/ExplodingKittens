@@ -26,7 +26,7 @@ public class Card : MonoBehaviour, InputHandler.IClickable, ICardCollectionHelpe
         CatsSchrodinger, // Шрёдингер кота
         CatterMelon, // Кошкарбуз
         HairyPotatoCat, // Волосатая кошка-картошка
-        TacoCat, // Такикот
+        TacoCat, // Такокот
         ExplodingKitten, // Взрывной котенок
         Default
     }

@@ -141,9 +141,8 @@ public class Deck : MonoBehaviour, ICardCollectionHelper
     {
         Debug.Log($"В колоде {cards.Count} карт:");
         byte index = 0;
+        
         foreach (var card in cards)
-        {
             Debug.Log($"{index++}: {card.cardName}");
-        }
     }
 }
