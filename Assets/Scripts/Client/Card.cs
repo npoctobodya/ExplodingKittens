@@ -1,8 +1,6 @@
 using UnityEngine;
 using DG.Tweening;
-using System.Collections;
 using System.Threading.Tasks;
-using Unity.Mathematics;
 using TMPro;
 
 public class Card : MonoBehaviour, InputHandler.IClickable, ICardCollectionHelper

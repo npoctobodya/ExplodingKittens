@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DG.Tweening;
-using Unity.VisualScripting;
 
 public class Player : MonoBehaviour, ICardCollectionHelper
 {

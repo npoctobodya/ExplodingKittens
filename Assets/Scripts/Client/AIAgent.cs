@@ -346,7 +346,7 @@ public class AIAgent : Agent
         var task = gameManager.GetCardFromDeck();
         yield return new WaitUntil(() => task.IsCompleted);
 
-        // AddRewardForPlayCard(false);
+        AddRewardForPlayCard(false);
 
         actionsCount++;
         actionInProgress = false;
@@ -376,7 +376,7 @@ public class AIAgent : Agent
         // Ждем завершения PreDrawCard
         var task = gameManager.PreDrawCard(card, true);
         yield return new WaitUntil(() => task.IsCompleted);
-        // AddRewardForPlayCard();
+        AddRewardForPlayCard();
 
         if (lastPlayedCard != null)
         {
@@ -472,6 +472,7 @@ public class AIAgent : Agent
 
     public void RewardForWin()
     {
+        AddReward(10f);
         gamesCount++;
         sumActions += actionsCount;
         avgActions = sumActions / gamesCount;
