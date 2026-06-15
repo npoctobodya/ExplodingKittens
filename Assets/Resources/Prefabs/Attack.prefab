@@ -881,7 +881,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc859987145e0804eb5cecc21caf0d1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Card
-  cardName: 0
+  cardName: 1
   gameManager: {fileID: 0}
   hidden: 0
   zIndex: 0

@@ -1,0 +1,83 @@
+{
+    "ExplodingKittensAI": {
+        "checkpoints": [
+            {
+                "steps": 499977,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-499977.onnx",
+                "reward": 26.684530372917653,
+                "creation_time": 1781470244.1092198,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-499977.pt"
+                ]
+            },
+            {
+                "steps": 999955,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-999955.onnx",
+                "reward": 47.193388568444384,
+                "creation_time": 1781470797.1575918,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-999955.pt"
+                ]
+            },
+            {
+                "steps": 1499905,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-1499905.onnx",
+                "reward": 48.4004724085331,
+                "creation_time": 1781471348.8070245,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-1499905.pt"
+                ]
+            },
+            {
+                "steps": 1999888,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-1999888.onnx",
+                "reward": 30.484432661905885,
+                "creation_time": 1781471918.3976004,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-1999888.pt"
+                ]
+            },
+            {
+                "steps": 2499996,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-2499996.onnx",
+                "reward": 52.368336482659764,
+                "creation_time": 1781472471.3575563,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-2499996.pt"
+                ]
+            },
+            {
+                "steps": 2999930,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-2999930.onnx",
+                "reward": 55.47981093029181,
+                "creation_time": 1781473024.1177716,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-2999930.pt"
+                ]
+            },
+            {
+                "steps": 3000186,
+                "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-3000186.onnx",
+                "reward": 55.47981093029181,
+                "creation_time": 1781473024.2267382,
+                "auxillary_file_paths": [
+                    "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-3000186.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 3000186,
+            "file_path": "results\\improvedFivePlayers\\ExplodingKittensAI.onnx",
+            "reward": 55.47981093029181,
+            "creation_time": 1781473024.2267382,
+            "auxillary_file_paths": [
+                "results\\improvedFivePlayers\\ExplodingKittensAI\\ExplodingKittensAI-3000186.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.2.0.dev0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

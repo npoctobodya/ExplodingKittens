@@ -94,7 +94,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             ""actions"": [
                 {
                     ""name"": ""CardInteract"",
-                    ""type"": ""Value"",
+                    ""type"": ""Button"",
                     ""id"": ""aebe45ab-09e4-4a33-aedf-54cdd8b6e6b5"",
                     ""expectedControlType"": """",
                     ""processors"": """",

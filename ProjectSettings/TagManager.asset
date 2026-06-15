@@ -10,6 +10,7 @@ TagManager:
   - ToDraw
   - PlayedCard
   - ToSteal
+  - Transparent
   layers:
   - Default
   - TransparentFX
