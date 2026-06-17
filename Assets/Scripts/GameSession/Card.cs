@@ -97,13 +97,13 @@ public class Card : MonoBehaviour, InputHandler.IClickable, ICardCollectionHelpe
                 break;
 
             case "InHand":
-                gameManager.CancelAllCardsToDraw();
+                _ = gameManager.CancelAllCardsToDraw();
 
                 if (gameManager.gameState == GameManager.GameState.PlayerTurn && GetComponentInParent<Player>().turn)
                 {
                     if (gameManager.HandleCardDraw(this)) return;
                     
-                    gameManager.CancelGetCardFromHand(this);
+                    _ = gameManager.CancelGetCardFromHand(this);
                 }
 
                 if (gameManager.gameState == GameManager.GameState.NopeAwaiting && IsCardNameByItsName(CardName.Nope))
@@ -120,7 +120,7 @@ public class Card : MonoBehaviour, InputHandler.IClickable, ICardCollectionHelpe
 
             case "ToDraw":
                 await gameManager.PreDrawCard(this);
-                gameManager.CancelAllCardsToDraw();
+                _ = gameManager.CancelAllCardsToDraw();
                 break;
 
             case "ToSteal":
@@ -181,12 +181,13 @@ public class Card : MonoBehaviour, InputHandler.IClickable, ICardCollectionHelpe
 
                 if (!CompareTag("InHand")) return;
 
-                gameManager.CancelGetCardFromHand(this);
+                _ = gameManager.CancelGetCardFromHand(this);
                 break;
 
             case GameManager.GameState.DrawFavor:
                 if (CompareTag("ToSteal"))
-                    gameManager.CancelGetCardFromHand(this);
+                    _ = gameManager.CancelGetCardFromHand(this);
+
                 break;
 
             case GameManager.GameState.NopeAwaiting:
@@ -200,7 +201,7 @@ public class Card : MonoBehaviour, InputHandler.IClickable, ICardCollectionHelpe
 
                 if (!player.CompareTag("Player")) return;
 
-                gameManager.CancelGetCardFromHand(this);
+                _ = gameManager.CancelGetCardFromHand(this);
                 break;
         }
     }

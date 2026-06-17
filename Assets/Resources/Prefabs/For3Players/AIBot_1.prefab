@@ -123,7 +123,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 74c9601f39d4851458ab40484c0e046d, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 60098205c8a735a4ba87b6ff039641af, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: ExplodingKittensAI

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -62,7 +63,7 @@ public class InputHandler : MonoBehaviour
             clickable?.OnClick();
         }
         else
-            gameManager.CancelAllCardsToDraw();
+            _ = gameManager.CancelAllCardsToDraw();
     }
 
     private Vector2 GetScreenPosition(InputAction.CallbackContext context)

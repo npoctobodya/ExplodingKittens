@@ -7,17 +7,20 @@ using TMPro;
 using UnityEngine;
 using Random = System.Random;
 
+[RequireComponent(typeof(StatsManager))]
 public class GameManager : MonoBehaviour, ICardCollectionHelper
 {
     public List<Player> players = new();
     public List<GameObject> cardPrefabs = new();
     public Deck deck;
-    public GameObject playersCanvas;
+    public GameObject playersObject;
     public GameObject playedCardsObject;
+    public GameObject uiGameManagerObject;
     public PlayedCards playedCards;
+    public StatsManager statsManager;
+    public UIGameManager uiGameManager;
     public byte playersCount = 5;
     public bool AITraining = false;
-    public List<Task> tasks = new();
     public GameState gameState = GameState.Preparing;
     public enum GameState
     {
@@ -31,6 +34,11 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
     void Awake()
     {
         playedCards = playedCardsObject.GetComponent<PlayedCards>();
+        statsManager = GetComponent<StatsManager>();
+        uiGameManager = uiGameManagerObject.GetComponent<UIGameManager>();
+
+        if (!AITraining)
+            playersCount = (byte)PlayerPrefs.GetInt("PlayersCount");
     }
 
     void Start()
@@ -38,7 +46,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         Preparing();
     }
 
-    void Preparing()
+    public void Preparing()
     {
         playersCount = Math.Min(playersCount, (byte)5);
         DrawDeckAndPlayers();
@@ -51,10 +59,15 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         deck.Fill(cardPrefabs);
         // deck.PrintDeck();
         await FillPlayersHand();
+
+        statsManager.time = Time.time;
+        statsManager.turnsCount = 0;
+        statsManager.playedCardsCount = 0;
+
         gameState = GameState.PlayerTurn;
     }
 
-    async void RestartGame()
+    public async void RestartGame()
     {
         deck.cards = new();
 
@@ -66,9 +79,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
             cardCollectionHelper.SafeDestroy(child.gameObject);
         }
 
-        for (int i = 0; i < playersCanvas.transform.childCount; i++)
+        for (int i = 0; i < playersObject.transform.childCount; i++)
         {
-            Transform child = playersCanvas.transform.GetChild(i);
+            Transform child = playersObject.transform.GetChild(i);
             Player player = child.GetComponent<Player>();
 
             player.hand = new();
@@ -106,7 +119,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         if (AITraining)
             playerType = "AIBot";
 
-        playerObject = Instantiate(Resources.Load<GameObject>($"Prefabs/For{playersCount}Players/{playerType}_0"), playersCanvas.transform, false);
+        playerObject = Instantiate(Resources.Load<GameObject>($"Prefabs/For{playersCount}Players/{playerType}_0"), playersObject.transform, false);
 
         playerObject.tag = playerType;
         playerObject.name = $"{playerObject.tag}_0";
@@ -117,7 +130,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
         for (int i = 1; i < playersCount; i++)
         {
-            playerObject = Instantiate(Resources.Load<GameObject>($"Prefabs/For{playersCount}Players/{playerType}_{i}"), playersCanvas.transform, false);
+            playerObject = Instantiate(Resources.Load<GameObject>($"Prefabs/For{playersCount}Players/{playerType}_{i}"), playersObject.transform, false);
 
             playerObject.tag = playerType;
             playerObject.name = $"{playerObject.tag}_{i}";
@@ -164,9 +177,14 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         deck.AddExplodingKitten(cardPrefabs[5], playersCount);
     }
 
-    public async void CheckAndSetNextTurn(Player turnPlayer, int nextPlayerCardsToTake = 1, bool kill = false)
+    public async Task CheckAndSetNextTurn(Player turnPlayer, int nextPlayerCardsToTake = 1, bool kill = false)
     {
         gameState = GameState.Preparing;
+
+        bool isPlayer = turnPlayer.CompareTag("Player");
+
+        if (isPlayer)
+            statsManager.turnsCount++;
 
         await DestroyAllPlayedCards();
         Player nextTurnPlayer = FindNextTurnPlayer(turnPlayer);
@@ -181,23 +199,20 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         }
         else
         {
-            if (turnPlayer.CompareTag("AIBot"))
-                turnPlayer.GetComponent<AIAgent>().PenalizeForExploding();
-            // else if (turnPlayer.CompareTag("Player"))
-            // {
-            //     for (int i = 0; i < turnPlayer.hand.Count; i++)
-            //     {
-            //         ICardCollectionHelper cardCollectionHelper = this;
-            //         cardCollectionHelper.SafeDestroy(turnPlayer.hand[i].gameObject);
-            //     }
-
-            //     gameState = GameState.Finished;
-            //     RestartGame();
-            //     return;
-            // }
-
             turnPlayer.alive = false;
-            // turnPlayer.turn = false;
+
+            if (!isPlayer)
+                turnPlayer.GetComponent<AIAgent>().PenalizeForExploding();
+            else
+            {
+                gameState = GameState.Finished;
+
+                statsManager.win = false;
+                statsManager.SaveStats();
+
+                uiGameManager.ResultsScreen(statsManager.win, statsManager.turnsCount, statsManager.playedCardsCount, statsManager.time);
+                return;
+            }
 
             List<Player> alivePlayers = players.FindAll(p => p.alive);
 
@@ -207,6 +222,16 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
                 if (alivePlayers[0].gameObject.CompareTag("AIBot"))
                     alivePlayers[0].gameObject.GetComponent<AIAgent>().RewardForWin();
+                else
+                {
+                    gameState = GameState.Finished;
+
+                    statsManager.win = true;
+                    statsManager.SaveStats();
+
+                    uiGameManager.ResultsScreen(statsManager.win, statsManager.turnsCount, statsManager.playedCardsCount, statsManager.time);
+                    return;
+                }
 
                 for (int i = 0; i < alivePlayers[0].hand.Count; i++)
                 {
@@ -246,17 +271,34 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         return alivePlayers[0];
     }
 
-    public void CancelAllCardsToDraw()
+    public async Task CancelAllCardsToDraw()
     {
-        List<Card> cardsToDraw = FindTurnPlayer().hand.FindAll(card => card.CompareTag("ToDraw"));
+        Player player = FindTurnPlayer();
 
-        if (cardsToDraw == null) return;
+        if (player.hand.Count == 0) return;
 
-        for (int i = 0; i < cardsToDraw.Count; i++)
+        try
         {
-            cardsToDraw[i].tag = "InHand";
-            CancelGetCardFromHand(cardsToDraw[i]);
+            List<Card> cardsToDraw = player.hand.FindAll(card => card.CompareTag("ToDraw"));
+            if (cardsToDraw == null) return;
+
+            var task = Task.Delay(0);
+
+            for (int i = 0; i < cardsToDraw.Count; i++)
+            {
+                cardsToDraw[i].tag = "InHand";
+                task = CancelGetCardFromHand(cardsToDraw[i]);
+            }
+
+            await task;
         }
+
+        catch (Exception)
+        {
+            Debug.LogWarning("EXCEPTION");
+            return;
+        }
+
     }
 
     public void SetCardToDraw(Card card)
@@ -272,45 +314,35 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
         if (card.IsCardNameByItsName(Card.CardName.Nope) && playedCards.cards.Count == 0)
         {
-            Debug.LogWarning("__1");
-            CancelAllCardsToDraw();
+            await CancelAllCardsToDraw();
             gameState = oldState;
             return;
+        }
+
+        if (playedCards.cards.Count == 1 && playedCards.cards.Count(c => c.IsCardNameByItsName(Card.CardName.Nope)) > 0)
+        {
+            await DestroyAllPlayedCards();
         }
 
         Player player = card.GetComponentInParent<Player>();
         List<Card> cardsToDraw = player.hand.FindAll(cardInHand => cardInHand.CompareTag("ToDraw"));
 
-        var task = Task.Delay(0);
-
         for (int i = 0; i < cardsToDraw.Count; i++)
         {
             player.RemoveCard(cardsToDraw[i]);
             await cardsToDraw[i].SetHidden(false, 0.2f);
+            await playedCards.AddCard(cardsToDraw[i].gameObject);
 
-            task = playedCards.AddCard(cardsToDraw[i].gameObject);
-            tasks.Add(task);
+            if (!triggeredByBot)
+                statsManager.playedCardsCount++;
         }
 
-        // if (card.IsCardNameByItsName(Card.CardName.Nope) && playedCards.cards.Count == 1)
-        // {
-        //     gameState = GameState.PlayerTurn;
-        //     playedCards.cards = new();
-        //     await DestroyCardAnimation(card);
-        //     Debug.LogWarning("__2");
-        //     return;
-        // }
-        if (tasks.Count > 0)
-            await Task.WhenAll(tasks.ToArray());
-
-        tasks.Remove(task);
-
-        SetNotTransparent(player);
+        await SetNotTransparent(player);
 
         if (oldState == GameState.NopeAwaiting)
         {
             gameState = oldState;
-            Debug.LogWarning("__3");
+            _ = NopeAwaiter().ConfigureAwait(false);
             return;
         }
 
@@ -319,22 +351,35 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
         for (int i = 10; i > 0; i--)
         {
-            await Task.Delay(100);
+            await Task.Delay(300);
 
-            if (tasks.Count > 0)
-                await Task.WhenAll(tasks.ToArray());
-
-            if (playedCardsCount != playedCards.cards.Count)
+            if (playedCardsCount != playedCards.cards.Count && gameState == GameState.NopeAwaiting)
             {
                 playedCardsCount = playedCards.cards.Count;
                 i = 10;
             }
         }
 
-        gameState = GameState.Preparing;
-        playedCardsCount = playedCards.cards.Count;
+        _ = NopeAwaiter().ConfigureAwait(false);
 
-        print(playedCards.cards.Count(c => !c.IsCardNameByItsName(Card.CardName.Nope)));
+        if (gameState == GameState.NopeAwaiting)
+            gameState = GameState.Preparing;
+        else
+        {
+            gameState = GameState.Preparing;
+
+            if (playedCards.cards.Count > 0)
+            {
+                if (playedCards.cards[0].IsCardNameByItsName(Card.CardName.Nope))
+                {
+                    await DestroyAllPlayedCards();
+                    gameState = GameState.PlayerTurn;
+                    return;
+                }
+            }
+        }
+
+        playedCardsCount = playedCards.cards.Count;
         print(playedCards.cards.Count - playedCards.transform.childCount);
 
         if ((playedCardsCount - cardsToDraw.Count) % 2 != 0)
@@ -353,6 +398,8 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
     public async Task DrawCard(Player turnPlayer, Card cardToDraw, bool triggeredByBot = false)
     {
+        Task task = Task.Delay(0);
+
         switch (cardToDraw.cardName)
         {
             case Card.CardName.Attack:
@@ -361,12 +408,14 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                 int nextPlayerCardsToTake = turnPlayer.cardsToTake + 2;
                 turnPlayer.cardsToTake = 0;
 
-                CheckAndSetNextTurn(turnPlayer, nextPlayerCardsToTake);
+                task = CheckAndSetNextTurn(turnPlayer, nextPlayerCardsToTake);
                 break;
 
             case Card.CardName.Favor:
                 gameState = GameState.DrawFavor;
-                await DestroyAllPlayedCards();
+                task = DestroyAllPlayedCards();
+                await task;
+
                 Player attackedPlayer = FindNextTurnPlayer(turnPlayer);
 
                 if (attackedPlayer.hand.Count != 0 && attackedPlayer != null)
@@ -379,6 +428,8 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                 break;
 
             case Card.CardName.SeeTheFuture:
+                task = DestroyAllPlayedCards();
+
                 if (triggeredByBot)
                 {
                     AIAgent aiAgent = turnPlayer.GetComponent<AIAgent>();
@@ -386,13 +437,12 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                 }
                 else
                 {
-                    await DestroyAllPlayedCards();
-
                     List<Card> seeTheFutureCards = deck.PeekTopThreeCards();
 
                     for (int i = 0; i < seeTheFutureCards.Count; i++)
                     {
                         seeTheFutureCards[i].transform.DOMoveX(turnPlayer.transform.position.x + 1.8f * (i - 1), 0.2f).Play();
+                        seeTheFutureCards[i].transform.DOMoveY(0, 0.2f).Play();
                         seeTheFutureCards[i].transform.SetParent(null, true);
 
                         await seeTheFutureCards[i].transform.DOLocalRotate(new(
@@ -417,7 +467,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                 break;
 
             case Card.CardName.Shuffle:
-                await DestroyAllPlayedCards();
+                task = DestroyAllPlayedCards();
+                await task;
+
                 deck.SetFirstThreeCardsActive(false);
 
                 ICardCollectionHelper cardCollectionHelper = this;
@@ -431,7 +483,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
             case Card.CardName.Skip:
                 turnPlayer.cardsToTake--;
-                CheckAndSetNextTurn(turnPlayer);
+                task = CheckAndSetNextTurn(turnPlayer);
                 break;
 
             case Card.CardName.BeardCat:
@@ -439,7 +491,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
             case Card.CardName.CatterMelon:
             case Card.CardName.HairyPotatoCat:
             case Card.CardName.TacoCat:
-                await DestroyAllPlayedCards();
+                task = DestroyAllPlayedCards();
+                await task;
+
                 attackedPlayer = FindNextTurnPlayer(turnPlayer);
 
                 if (attackedPlayer.hand.Count != 0 && attackedPlayer != null)
@@ -455,9 +509,11 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                 break;
 
             default:
-                await DestroyAllPlayedCards();
+                task = DestroyAllPlayedCards();
                 return;
         }
+
+        await task;
 
         if (gameState != GameState.DrawFavor)
             gameState = GameState.PlayerTurn;
@@ -501,7 +557,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
             }
             else
             {
-                // await DoColorAndDoScaleSequence(cardFromDeck);
+                await DoColorAndDoScaleSequence(cardFromDeck);
 
                 cardFromDeck.GetComponent<Explosion>().Explode();
 
@@ -526,7 +582,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                             {
                                 _ = DestroyCardAnimation(turnPlayer.hand[halfHandCount + i]);
                                 lastDestroyCardAnimationTask = DestroyCardAnimation(turnPlayer.hand[halfHandCount - i]);
-                                await Task.Delay(1);
+                                await Task.Delay(5);
                             }
 
                             if (negativeIterations == 1)
@@ -548,14 +604,11 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
             await cardFromDeck.SetHidden(hide, 0.2f);
         }
 
-        CheckAndSetNextTurn(turnPlayer, kill: kill);
+        await CheckAndSetNextTurn(turnPlayer, kill: kill);
     }
 
     public async Task DestroyCardAnimation(Card card)
     {
-        if (tasks.Count > 0)
-            await Task.WhenAll(tasks.ToArray());
-
         if (card == null) return;
 
         SpriteRenderer spriteRenderer = card.GetComponent<SpriteRenderer>();
@@ -564,16 +617,11 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         foreach (var text in texts)
             text.DOColor(Color.clear, 0.3f).Play();
 
-        var task = spriteRenderer.DOColor(Color.clear, 0.3f).Play().AsyncWaitForCompletion();
-        tasks.Add(task);
-        
-        if (tasks.Count > 0)
-            await Task.WhenAll(tasks.ToArray());
-
-        tasks.Remove(task);
+        await spriteRenderer.DOColor(Color.clear, 0.3f).Play().AsyncWaitForCompletion();
 
         ICardCollectionHelper cardCollectionHelper = this;
-        cardCollectionHelper.SafeDestroy(card.gameObject);
+        if (card != null)
+            cardCollectionHelper.SafeDestroy(card.gameObject);
     }
 
     public async Task DoColorAndDoScaleSequence(Card explodingKitten)
@@ -654,10 +702,10 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         }
     }
 
-    public void CancelGetCardFromHand(Card card)
+    public async Task CancelGetCardFromHand(Card card)
     {
         Player player = card.transform.GetComponentInParent<Player>();
-        SetNotTransparent(player);
+        await SetNotTransparent(player);
 
         if (!player.turn)
         {
@@ -684,16 +732,20 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         }
     }
 
-    public void SetNotTransparent(Player player)
+    public async Task SetNotTransparent(Player player)
     {
         if (!player.alive) return;
         List<Card> transpCards = player.hand.FindAll(c => c.CompareTag("Transparent"));
 
+        var task = Task.Delay(0);
+
         foreach (var c in transpCards)
         {
-            c.GetComponent<SpriteRenderer>().DOColor(new(1, 1, 1, 1), 0.1f).Play();
+            task = c.GetComponent<SpriteRenderer>().DOColor(new(1, 1, 1, 1), 0.1f).Play().AsyncWaitForCompletion();
             c.tag = "InHand";
         }
+
+        await task;
     }
 
     public async Task GiveCard(Card card)
@@ -730,6 +782,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
     public async Task DestroyAllPlayedCards()
     {
+        GameState oldState = gameState;
+        gameState = GameState.Preparing;
+
         var task = Task.Delay(0);
 
         for (int i = 0; i < playedCards.transform.childCount; i++)
@@ -737,8 +792,23 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
             playedCards.RemoveCard(playedCards.transform.GetChild(i).GetComponent<Card>());
             task = DestroyCardAnimation(playedCards.transform.GetChild(i).GetComponent<Card>());
         }
-        
+
         await task;
+        gameState = oldState;
         print("Cleared down");
+    }
+
+    public async Task NopeAwaiter()
+    {
+        for (int i = 0; i < 500; i++)
+        {
+            await Task.Delay(10);
+
+            if (gameState != GameState.NopeAwaiting)
+                return;
+        }
+
+        await DestroyAllPlayedCards();
+        gameState = GameState.PlayerTurn;
     }
 }

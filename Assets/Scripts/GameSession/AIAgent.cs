@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Threading.Tasks;
 
 public class AIAgent : Agent
 {
@@ -122,7 +123,7 @@ public class AIAgent : Agent
         sensor.AddObservation(player.cardsToTake / 5f);
     }
 
-    public override void OnActionReceived(ActionBuffers actions)
+    public override async void OnActionReceived(ActionBuffers actions)
     {
         if (actionInProgress) return;
         if (!player.alive) return;
@@ -144,7 +145,7 @@ public class AIAgent : Agent
                 Card nopeCard = player.hand.Find(c => c.IsCardNameByItsName(Card.CardName.Nope));
 
                 if (nopeCard != null)
-                    HandleNopeAwaitingActions(actions, nopeCard);
+                    await HandleNopeAwaitingActions(actions, nopeCard);
                 else
                     actionInProgress = false;
                 break;
@@ -282,7 +283,7 @@ public class AIAgent : Agent
         }
     }
 
-    private void HandleNopeAwaitingActions(ActionBuffers actions, Card nopeCard)
+    private async Task HandleNopeAwaitingActions(ActionBuffers actions, Card nopeCard)
     {
         int useNope = actions.DiscreteActions[0]; // 0 - не использовать, 1 - использовать
 
@@ -323,7 +324,7 @@ public class AIAgent : Agent
         {
             // Отказываемся от использования Nope
             AddReward(0.1f); // Небольшое поощрение за отказ
-            gameManager.CancelAllCardsToDraw();
+            await gameManager.CancelAllCardsToDraw();
             actionInProgress = false;
         }
     }

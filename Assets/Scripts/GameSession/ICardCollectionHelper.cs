@@ -29,12 +29,15 @@ public interface ICardCollectionHelper
         }
     }
 
-    public void SafeDestroy(GameObject gameObject, bool log = false)
+    public void SafeDestroy(GameObject gameObject, bool log = true)
     {
         if (log)
-            Debug.LogWarning($"Killed tweens: {gameObject.transform.DOKill()}");
+            Debug.LogWarning($"Killed tweens: {gameObject.transform.DOKill() + gameObject.GetComponent<SpriteRenderer>().DOKill()}");
         else
+        {
             gameObject.transform.DOKill();
+            gameObject.GetComponent<SpriteRenderer>().DOKill();
+        }
         
         GameObject.Destroy(gameObject);
     }
