@@ -19,6 +19,8 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
     public PlayedCards playedCards;
     public StatsManager statsManager;
     public UIGameManager uiGameManager;
+    public AudioSource whooshSound;
+    public AudioSource explosionSound;
     public byte playersCount = 5;
     public bool AITraining = false;
     public GameState gameState = GameState.Preparing;
@@ -125,7 +127,10 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         playerObject.name = $"{playerObject.tag}_0";
 
         Player player = playerObject.GetComponent<Player>();
+
         players.Add(player);
+        player.whooshSound = whooshSound;
+
         playerType = "AIBot";
 
         for (int i = 1; i < playersCount; i++)
@@ -136,7 +141,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
             playerObject.name = $"{playerObject.tag}_{i}";
 
             player = playerObject.GetComponent<Player>();
+
             players.Add(player);
+            player.whooshSound = whooshSound;
         }
     }
 
@@ -441,6 +448,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
                     for (int i = 0; i < seeTheFutureCards.Count; i++)
                     {
+                        whooshSound.pitch = UnityEngine.Random.Range(0.7f, 1f);
+                        whooshSound.Play();
+
                         seeTheFutureCards[i].transform.DOMoveX(turnPlayer.transform.position.x + 1.8f * (i - 1), 0.2f).Play();
                         seeTheFutureCards[i].transform.DOMoveY(0, 0.2f).Play();
                         seeTheFutureCards[i].transform.SetParent(null, true);
@@ -457,6 +467,9 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
 
                     for (int i = seeTheFutureCards.Count - 1; i >= 0; i--)
                     {
+                        whooshSound.pitch = UnityEngine.Random.Range(0.7f, 1f);
+                        whooshSound.Play();
+
                         seeTheFutureCards[i].transform.SetParent(deck.transform, true);
                         seeTheFutureCards[i].transform.DOLocalMove(Vector3.zero, 0.2f).Play();
 
@@ -560,6 +573,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
                 await DoColorAndDoScaleSequence(cardFromDeck);
 
                 cardFromDeck.GetComponent<Explosion>().Explode();
+                explosionSound.Play();
 
                 turnPlayer.RemoveCard(cardFromDeck, false);
                 Task lastDestroyCardAnimationTask = DestroyCardAnimation(cardFromDeck);
@@ -690,6 +704,7 @@ public class GameManager : MonoBehaviour, ICardCollectionHelper
         {
             Player player = card.GetComponentInParent<Player>();
             int zOffset = 0;
+
             if (card.IsCatCard())
                 zOffset = player.hand.FindAll(cardToDraw => cardToDraw.CompareTag("ToDraw")).Count;
 

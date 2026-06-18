@@ -519,6 +519,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Card
   cardName: 12
   gameManager: {fileID: 0}
+  hidden: 0
+  zIndex: 0
 --- !u!114 &508500489383902445
 MonoBehaviour:
   m_ObjectHideFlags: 0

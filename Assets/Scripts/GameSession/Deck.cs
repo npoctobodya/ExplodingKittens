@@ -47,7 +47,6 @@ public class Deck : MonoBehaviour, ICardCollectionHelper
     public void AddExplodingKitten(GameObject cardPrefab, byte playersCount)
     {
         explodingKittenCount = Math.Min((byte)(playersCount - 1), (byte)4);
-        explodingKittenCount = 100;
 
         AddCardsToList(cards, Card.CardName.ExplodingKitten, cardPrefab, explodingKittenCount);
 

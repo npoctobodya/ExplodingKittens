@@ -4,7 +4,8 @@ using TMPro;
 using DG.Tweening;
 using UnityEngine.UI;
 using System;
-using UnityEditor;
+using System.Threading.Tasks;
+using NUnit.Framework;
 
 public class UIMainMenuManager : MonoBehaviour
 {
@@ -23,6 +24,8 @@ public class UIMainMenuManager : MonoBehaviour
     public GameObject winSessionsObject;
     public GameObject loseSessionsObject;
     public GameObject winPercentageObject;
+    public GameObject sliderVolumeObject;
+    public GameObject statusObject;
     public TextMeshProUGUI tmProPlayedSessions;
     public TextMeshProUGUI tmProAvgTime;
     public TextMeshProUGUI tmProAvgTurns;
@@ -34,11 +37,17 @@ public class UIMainMenuManager : MonoBehaviour
     public TextMeshProUGUI tmProPlayersCount;
     public TextMeshProUGUI tmProDifficulty;
     public CanvasScaler canvasScaler;
+    public Slider sliderVolume;
+    public TextMeshProUGUI tmProStatus;
     public string playersCount;
     bool hardDifficulty = false;
+    bool isLoading = false;
     void Awake()
     {
         DOTween.KillAll();
+
+        sliderVolume = sliderVolumeObject.GetComponent<Slider>();
+        sliderVolume.value = PlayerPrefs.GetFloat("Volume");
 
         tmProPlayedSessions = playedSessionsObject.GetComponent<TextMeshProUGUI>();
         tmProAvgTime = avgTimeObject.GetComponent<TextMeshProUGUI>();
@@ -56,6 +65,8 @@ public class UIMainMenuManager : MonoBehaviour
         hardDifficulty = tmProDifficulty.text == "сложная";
 
         canvasScaler = canvasObject.GetComponent<CanvasScaler>();
+
+        tmProStatus = statusObject.GetComponent<TextMeshProUGUI>();
     }
     public void ExitApp()
     {
@@ -65,6 +76,8 @@ public class UIMainMenuManager : MonoBehaviour
     public void StartGame()
     {
         PlayerPrefs.SetInt("PlayersCount", int.Parse(playersCount) + 1);
+        statusObject.SetActive(true);
+        tmProStatus.text = "загрузка...";
         SceneManager.LoadScene("Singleplayer");
     }
 
@@ -74,6 +87,7 @@ public class UIMainMenuManager : MonoBehaviour
         helpObject.SetActive(false);
         settingsMenuObject.SetActive(false);
         mainMenuObject.SetActive(true);
+        statusObject.SetActive(false);
     }
 
     public void Singleplayer()
@@ -82,6 +96,7 @@ public class UIMainMenuManager : MonoBehaviour
         helpObject.SetActive(false);
         settingsMenuObject.SetActive(false);
         gameSettingsObject.SetActive(true);
+        statusObject.SetActive(false);
     }
 
     public void IncPlayersCount()
@@ -122,7 +137,7 @@ public class UIMainMenuManager : MonoBehaviour
     public void SettingsMenu()
     {
         canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        
+
         tmProPlayedSessions.text = PlayerPrefs.GetInt("PlayedSessions").ToString();
 
         TimeSpan timeSpan = TimeSpan.FromSeconds(PlayerPrefs.GetFloat("AvgTime"));
@@ -139,6 +154,7 @@ public class UIMainMenuManager : MonoBehaviour
         gameSettingsObject.SetActive(false);
         helpObject.SetActive(false);
         settingsMenuObject.SetActive(true);
+        statusObject.SetActive(false);
     }
 
     public void ResetStats()
@@ -161,5 +177,33 @@ public class UIMainMenuManager : MonoBehaviour
 
         settingsMenuObject.SetActive(false);
         helpObject.SetActive(true);
+        statusObject.SetActive(false);
+    }
+
+    public void OnSliderValueChanged(float value)
+    {
+        PlayerPrefs.SetFloat("Volume", value);
+    }
+
+    public void Multiplayer()
+    {
+        _ = Awaiter();
+    }
+    async Task Awaiter()
+    {
+        if (isLoading) return;
+        
+        isLoading = true;
+        statusObject.SetActive(true);
+
+        tmProStatus.text = "подключение к серверу...";
+        await Task.Delay(UnityEngine.Random.Range(5000, 10000));
+        isLoading = false;
+
+        tmProStatus.text = "ошибка подключения к серверу";
+        await Task.Delay(3000);
+
+        if (isLoading) return;
+        statusObject.SetActive(false);
     }
 }

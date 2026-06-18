@@ -17,6 +17,8 @@ public class UIGameManager : MonoBehaviour
     public GameObject turnsCountObject;
     public GameObject playedCardsCountObject;
     public GameObject timeObject;
+    public GameObject sliderVolumeObject;
+    public GameObject statusObject;
     public GameManager gameManager;
     public List<GameObject> settingsElements;
     public List<SpriteRenderer> settingsElementsSpriteRenderers = new();
@@ -25,6 +27,10 @@ public class UIGameManager : MonoBehaviour
     public TextMeshProUGUI tmProTurnsCount;
     public TextMeshProUGUI tmProTime;
     public TextMeshProUGUI tmProPlayedCardsCount;
+    public Slider sliderVolume;
+    public Sprite muteSprite;
+    public Sprite unMuteSprite;
+    public TextMeshProUGUI tmProStatus;
 
     void Awake()
     {
@@ -35,21 +41,34 @@ public class UIGameManager : MonoBehaviour
         tmProTime = timeObject.GetComponent<TextMeshProUGUI>();
         tmProPlayedCardsCount = playedCardsCountObject.GetComponent<TextMeshProUGUI>();
 
+        tmProStatus = statusObject.GetComponent<TextMeshProUGUI>();
+
         settingsElementsSpriteRenderers = new();
 
         foreach (var el in settingsElements)
             settingsElementsSpriteRenderers.Add(el.GetComponent<SpriteRenderer>());
+
+        sliderVolume = sliderVolumeObject.GetComponent<Slider>();
+        sliderVolume.value = PlayerPrefs.GetFloat("Volume");
+        
+        gameManager.whooshSound.volume = sliderVolume.value;
+        gameManager.explosionSound.volume = sliderVolume.value;
+
     }
 
     public void Restart()
     {
         DOTween.KillAll();
+        statusObject.SetActive(true);
+        tmProStatus.text = "загрузка...";
         SceneManager.LoadScene("Singleplayer");
     }
 
     public void Exit()
     {
         DOTween.KillAll();
+        statusObject.SetActive(true);
+        tmProStatus.text = "загрузка...";
         SceneManager.LoadScene("MainMenu");
     }
 
@@ -103,5 +122,15 @@ public class UIGameManager : MonoBehaviour
         gameManager.deck.gameObject.SetActive(false);
         gameResultsObject.SetActive(true);
         helpObject.SetActive(false);
+    }
+
+    public void OnSliderValueChanged(float value)
+    {
+        PlayerPrefs.SetFloat("Volume", value);
+
+        gameManager.whooshSound.volume = value;
+        gameManager.explosionSound.volume = value;
+
+        settingsElementsSpriteRenderers[1].sprite = value == 0 ? muteSprite : unMuteSprite;
     }
 }

@@ -5,28 +5,28 @@ using DG.Tweening;
 
 public class Player : MonoBehaviour, ICardCollectionHelper
 {
-    [Header("Контейнеры")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public Transform cardsContainer;
     public RectTransform containerRect;
 
-    [Header("Настройки карт")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ")]
     [SerializeField] private float cardWidth = 200f;
     [SerializeField] private float first = 5f;
     [SerializeField] private float second = 50f;
 
-    [Header("Отступы от краёв")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ")]
     [SerializeField] private float horizontalPadding = 50f;
 
     public List<Card> hand = new();
     public bool alive = true;
 
     public bool turn = false;
+    public AudioSource whooshSound;
     public int cardsToTake = 1;
-
     public async Task AddDefuseCard(Deck deck, GameObject defusePrefab)
     {
         GameObject defuseCardObject = Instantiate(defusePrefab, deck.transform, true);
-        
+
         defuseCardObject.transform.localEulerAngles = new(
             defuseCardObject.transform.localEulerAngles.x,
             180f,
@@ -44,13 +44,16 @@ public class Player : MonoBehaviour, ICardCollectionHelper
     {
         if (newCard == null) return;
 
+        whooshSound.pitch = Random.Range(0.7f, 1f);
+        whooshSound.Play();
+
         newCard.transform.SetParent(cardsContainer);
-        
+
         newCard.transform.DOLocalRotate(new(0f, newCard.transform.localEulerAngles.y, 0f), 0.2f).Play();
         await newCard.transform.DOLocalMove(new(0, 0, -hand.Count - 1), 0.2f).Play().AsyncWaitForCompletion();
 
         newCard.tag = "InHand";
-   
+
         Card card = newCard.GetComponent<Card>();
 
         card.zIndex = -hand.Count;
@@ -65,19 +68,22 @@ public class Player : MonoBehaviour, ICardCollectionHelper
     {
         if (hand.Count == 0)
         {
-            Debug.LogWarning("Рука пуста!");
+            Debug.LogWarning("пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ!");
             return null;
         }
-        
+
+        whooshSound.pitch = Random.Range(0.7f, 1f);
+        whooshSound.Play();
+
         hand.Remove(cardToRemove);
-        
+
         if (repositionCards)
         {
             RepositionAllCards();
             ICardCollectionHelper cardCollectionHelper = this;
             cardCollectionHelper.SetZIndexes(hand, true);
         }
-        
+
         return cardToRemove;
     }
 
